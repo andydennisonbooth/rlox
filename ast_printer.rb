@@ -1,5 +1,8 @@
-
 class AstPrinter
+  def self.print(expr)
+    new.print(expr)
+  end
+
   def print(expr)
     expr.accept(self)
   end

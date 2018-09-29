@@ -19,11 +19,11 @@ class Scanner
     var
     while
   ].freeze
-    # .each_with_object({}) { |k, o| o[k] = k.to_sym }.freeze
 
-  def initialize(source, lox)
+  def initialize(lox, source)
     @lox = lox
     @source = source
+
     @start = 0
     @current = 0
     @line = 1

@@ -1,4 +1,3 @@
-
 {
   Binary: %i[left operator right],
   Grouping: %i[expression],
