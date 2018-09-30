@@ -23,8 +23,7 @@ class Lox
   def initialize
     @had_error = false
     @had_runtime_error = false
-
-    @interpreter = Interpreter.new
+    @interpreter = Interpreter.new(self)
   end
 
   def run_file!(path)
@@ -38,16 +37,17 @@ class Lox
       print '> '
       run(gets.chomp)
       @had_error = false
+      @had_runtime_error = false
     end
   end
 
   def run(source)
     tokens = Scanner.new(self, source).scan_tokens
-    expression = Parser.new(self, tokens).parse
+    statements = Parser.new(self, tokens).parse
 
     return if @had_error
 
-    @interpreter.interpret!(expression)
+    @interpreter.interpret!(statements)
   end
 
   def error(line, message)

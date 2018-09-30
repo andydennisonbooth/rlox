@@ -1,4 +1,5 @@
 require_relative 'expr'
+require_relative 'stmt'
 
 class Parser
   def initialize(lox, tokens)
@@ -9,15 +10,39 @@ class Parser
   end
 
   def parse
-    expression
-  rescue ParseError
-    nil
+    statements = []
+    statements << declaration until at_end?
+    statements
   end
 
   private
 
   def expression
     equality
+  end
+
+  def statement
+    return print_statement if match?(:print)
+    expression_statement
+  end
+
+  def declaration
+    return var_declaration if match?(:var)
+  rescue ParseError
+    synchronize!
+    nil
+  end
+
+  def print_statement
+    value = expression
+    consume!(:semicolon, "Expect ';' after value.")
+    Print.new(value)
+  end
+
+  def expression_statement
+    expr = expression
+    consume!(:semicolon, "Expect ';' after expression.")
+    Expression.new(expr)
   end
 
   def equality
