@@ -18,19 +18,40 @@ class Parser
   private
 
   def expression
-    equality
+    assignment
   end
 
   def statement
+    return if_statement if match?(:if)
     return print_statement if match?(:print)
+    return Block.new(block) if match?(:left_brace)
     expression_statement
   end
 
   def declaration
     return var_declaration if match?(:var)
+    statement
   rescue ParseError
     synchronize!
     nil
+  end
+
+  def if_statement
+    consume!(:left_paren, "Expect '(' after 'if'.")
+    condition = expression
+    consume!(:right_paren, "Expect ')' after if condition.")
+
+    then_branch = statement
+    else_branch = match?(:else) ? statement : nil
+
+    If.new(condition, then_branch, else_branch)
+  end
+
+  def var_declaration
+    name = consume!(:identifier, 'Expect variable name.')
+    initializer = match?(:equal) ? expression : nil
+    consume!(:semicolon, "Expect ';' after variable declaration.")
+    Var.new(name, initializer)
   end
 
   def print_statement
@@ -43,6 +64,57 @@ class Parser
     expr = expression
     consume!(:semicolon, "Expect ';' after expression.")
     Expression.new(expr)
+  end
+
+  def block
+    statements = []
+
+    statements << declaration while !check?(:right_brace) && !at_end?
+
+    consume!(:right_brace, "Expect '}' after block.")
+    statements
+  end
+
+  def assignment
+    expr = _or
+
+    if match?(:equal)
+      equals = previous
+      value = assignment
+
+      if expr.is_a?(Variable)
+        name = expr.name
+        return Assign.new(name, value)
+      end
+
+      error(equals, 'Invalid assignment target.')
+    end
+
+    expr
+  end
+
+  def _or
+    expr = _and
+
+    while match?(:or)
+      operator = previous
+      right = _and
+      expr = Logical.new(expr, operator, right)
+    end
+
+    expr
+  end
+
+  def _and
+    expr = equality
+
+    while match?(:and)
+      operator = previous
+      right = equality
+      expr = Literal.new(expr, operator, right)
+    end
+
+    expr
   end
 
   def equality
@@ -109,6 +181,8 @@ class Parser
     return Literal.new(nil) if match?(:nil)
 
     return Literal.new(previous.literal) if match?(:number, :string)
+
+    return Variable.new(previous) if match?(:identifier)
 
     if match?(:left_paren)
       expr = expression

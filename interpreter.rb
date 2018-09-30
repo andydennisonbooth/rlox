@@ -1,8 +1,11 @@
 require_relative 'lox_runtime_error'
+require_relative 'environment'
 
 class Interpreter
   def initialize(lox)
     @lox = lox
+
+    @environment = Environment.new
   end
 
   def interpret!(statements)
@@ -13,6 +16,18 @@ class Interpreter
 
   def visit_literal_expr(expr)
     expr.value
+  end
+
+  def visit_logical_expr(expr)
+    left = evaluate(expr.left)
+
+    if expr.operator.type == :or
+      return left if left
+    else
+      return left unless left
+    end
+
+    evaluate(expr.right)
   end
 
   def visit_grouping_expr(expr)
@@ -70,13 +85,39 @@ class Interpreter
     end
   end
 
+  def visit_variable_expr(expr)
+    @environment.get(expr.name)
+  end
+
   def visit_expression_stmt(stmt)
     evaluate(stmt.expression)
     nil
   end
 
+  def visit_if_stmt(stmt)
+    if evaluate(stmt.condition)
+      execute(stmt.then_branch)
+    elsif !stmt.else_branch.nil?
+      execute(stmt.else_branch)
+    end
+
+    nil
+  end
+
   def visit_print_stmt(stmt)
     puts evaluate(stmt.expression)
+  end
+
+  def visit_var_stmt(stmt)
+    value = stmt.initializer.nil? ? nil : evaluate(stmt.initializer)
+    @environment.define(stmt.name.lexeme, value)
+    nil
+  end
+
+  def visit_assign_expr(expr)
+    value = evaluate(expr.value)
+    @environment.assign(expr.name, value)
+    value
   end
 
   private
@@ -87,6 +128,20 @@ class Interpreter
 
   def execute(stmt)
     stmt.accept(self)
+  end
+
+  def execute_block(statements, environment)
+    previous = @environment
+    @environment = environment
+
+    statements.each { |statement| execute(statement) }
+  ensure
+    @environment = previous
+  end
+
+  def visit_block_stmt(stmt)
+    execute_block(stmt.statements, Environment.new(@environment))
+    nil
   end
 
   def equal?(left, right)

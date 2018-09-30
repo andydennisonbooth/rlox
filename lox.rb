@@ -39,6 +39,8 @@ class Lox
       @had_error = false
       @had_runtime_error = false
     end
+  rescue SystemExit, Interrupt
+    exit
   end
 
   def run(source)
