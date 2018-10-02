@@ -107,7 +107,7 @@ class Scanner
       advance!
     end
 
-    return @lox.error(@line, "Unterminated string.") if at_end?
+    return @lox.error(@line, 'Unterminated string.') if at_end?
 
     advance!
 

@@ -114,6 +114,11 @@ class Interpreter
     nil
   end
 
+  def visit_while_stmt(stmt)
+    execute(stmt.body) while evaluate(stmt.condition)
+    nil
+  end
+
   def visit_assign_expr(expr)
     value = evaluate(expr.value)
     @environment.assign(expr.name, value)

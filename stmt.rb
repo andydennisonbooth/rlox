@@ -6,5 +6,6 @@ build_ast_classes(
   Expression: %i[expression],
   If: %i[condition then_branch else_branch],
   Print: %i[expression],
-  Var: %i[name initializer]
+  Var: %i[name initializer],
+  While: %i[condition body]
 )
